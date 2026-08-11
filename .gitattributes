@@ -1,0 +1,8 @@
+# Shell scripts must keep LF endings. A CRLF shebang makes Linux fail with
+# "bad interpreter: /bin/bash^M", so this is enforced rather than left to
+# whatever core.autocrlf the cloning machine happens to have.
+*.sh    text eol=lf
+*.py    text eol=lf
+*.md    text eol=lf
+*.json  text eol=lf
+LICENSE text eol=lf
