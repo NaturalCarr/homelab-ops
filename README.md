@@ -1,13 +1,13 @@
 # homelab-ops
 
 Scripts that keep my Unraid server running. It's been up since 2016 serving media,
-cloud storage, and VMs behind an nginx reverse proxy, and these are the things I
-wrote so I'd stop having to babysit it.
+cloud storage, and VMs behind an nginx reverse proxy, and these are the ones I wrote so
+I'd stop having to babysit it.
 
-This is a selection, not my whole scripts folder. I pulled the ones that would make
-sense to somebody else and moved my hardcoded paths into variables at the top of each
-file. They work fine for me, but I'm not making any guarantees (read them before you
-run them, especially anything that deletes).
+This is a selection, not the whole scripts folder. I pulled the ones that'd make sense to
+somebody else and moved my hardcoded paths into variables at the top of each file. They
+work fine for me, but I'm not making any guarantees (read them before you run them,
+especially anything that deletes).
 
 ## Contents
 
@@ -30,8 +30,8 @@ run them, especially anything that deletes).
 The three `ramdisk/` scripts are the interesting part, so here's what they're doing.
 
 Plex's SQLite databases are the hot spot on a media server. Every library scan, every
-playback state update, every metadata refresh hits them. On array storage that's slow,
-and the I/O fights with whatever happens to be streaming.
+playback state update, every metadata refresh hits them. On array storage that's slow, and
+the I/O fights with whatever happens to be streaming at the time.
 
 So the databases live in a tmpfs RAM disk, bind-mounted over the path the container
 expects:
@@ -49,14 +49,14 @@ nightly      ──► pause container
 array stop   ──► stop container, unmount, flush RAM back to disk
 ```
 
-The backup script exists to keep that pause window short. The obvious way to write it
+The backup script is there to keep that pause window short. The obvious way to write it
 pauses the container for the whole RAM-to-disk copy. This one pauses only for the
-RAM-to-RAM copy, which is usually well under a second, then unpauses and does the slow
-write while Plex is serving again. Every stage is timed and goes into the log, so I know
-what the pause actually was instead of assuming.
+RAM-to-RAM copy (usually well under a second), then unpauses and does the slow write while
+Plex is serving again. Every stage is timed into the log, so I know what the pause actually
+was instead of guessing.
 
-Lose power and I lose a day of metadata at most. That's a fine trade for the I/O it
-gives back, and the databases can be rebuilt if it ever comes to that.
+Lose power and I lose a day of metadata at most. That's a fine trade for the I/O it buys
+back, and the databases can be rebuilt if it ever comes to that.
 
 ## Locking yourself out
 
@@ -66,9 +66,9 @@ mine.
 My public IP is dynamic. Whitelisting it goes stale the next time the lease changes, and
 looking up my own domain hands back the CDN proxy instead of the actual origin.
 
-The DDNS client already has the answer. It tracks the real public address in its own
-state file so it can push updates, which makes that file the authoritative local source
-and means no network round trip:
+The DDNS client already has the answer. It tracks the real public address in its own state
+file so it can push updates, which makes that file the authoritative local source and skips
+the network round trip:
 
 ```
 ddns-updater/updates.json  ──►  newest recorded IP  ──►  fail2ban-client unban
@@ -99,8 +99,12 @@ These follow a few rules the originals didn't:
 
 ## Requirements
 
-Bash 4+, Docker, and `ffmpeg` for the media scripts. The RAM disk scripts assume Unraid's
-array start/stop hooks, but the pattern works anywhere you've got tmpfs and systemd.
+| Requirement | Needed for | Notes |
+|---|---|---|
+| Bash 4+ | Every script | |
+| Docker | Every script | Container pause / restart control |
+| `ffmpeg` | The media scripts | `transcode.py` also wants Vulkan offload |
+| Unraid array start/stop hooks | The RAM disk scripts | The pattern works anywhere you've got tmpfs and systemd |
 
 ## Licence
 
