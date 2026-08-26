@@ -1,0 +1,24 @@
+# Logs
+*.log
+*.logs
+
+# Editor / OS noise
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Never commit secrets — API tokens, server tokens, credentials
+.env
+*.env
+secrets/
+*_token
+*.key
+*.pem
+
+# Superseded copies (the reason the original script directory was unreadable)
+*.old
+*.save
+*.bak
+*.backup
+*.original
