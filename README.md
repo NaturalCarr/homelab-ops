@@ -1,14 +1,15 @@
 # homelab-ops
 
-Scripts I use to run and maintain my Unraid homelab.
+The scripts and operating notes behind my Unraid homelab.
 
-This server has been running in some form since 2016. It handles media, cloud
-storage, virtual machines, Docker services, and an nginx reverse proxy. These
-aren't example scripts written for a tutorial. They're cleaned-up versions of
-jobs that run on the server.
+I've run some version of this server since 2016. It handles media, cloud storage,
+virtual machines, Docker services, monitoring, and the nginx edge in front of
+it all. These aren't tutorial samples. They're cleaned-up versions of jobs that
+run on the server.
 
-This is a curated repo, not a copy of `/boot/scripts`. Server-specific paths,
-container names, and other values have been moved to variables where practical.
+This repo is curated. It isn't a copy of `/boot/scripts`, and it doesn't contain
+credentials or private runtime data. Server-specific paths and container names
+are variables where that makes sense.
 
 ## Scripts
 
@@ -44,18 +45,17 @@ paths Plex expects.
 [ARRAY STOP]   stop container --> unmount --> RAM disk --> disk backup
 ```
 
-The nightly job only pauses the container during the RAM-to-RAM copy. The slow
-write to disk happens after the container is running again. Each stage is timed
-and logged.
+The nightly job pauses the container only for the RAM-to-RAM copy. Plex comes
+back up before the slower write to disk starts. Every stage is timed and logged.
 
-The tradeoff is simple: tmpfs isn't persistent. A power failure can lose any
-database changes made since the last disk backup. This works fine for me, but
-make sure that tradeoff works for you before using it.
+Tmpfs isn't persistent. A power failure can lose database changes made since
+the last disk backup. Make sure you understand and accept that risk before
+using this setup.
 
-## Configuration
+## Before you run anything
 
-Review the variables near the top of each script before running anything.
-Defaults may reference Unraid paths such as:
+Review the variables near the top of each script. Defaults may reference Unraid
+paths such as:
 
 ```text
 /boot/scripts
@@ -64,24 +64,24 @@ Defaults may reference Unraid paths such as:
 /var/log
 ```
 
-Most values can also be overridden through environment variables. Check the
-container names, paths, permissions, health checks, and backup locations for
-your server.
+Most values can also come from environment variables. Check every container
+name, path, permission, health check, and backup location against your server.
 
-## Requirements
-
-Requirements depend on the script. Common ones are Bash 4+, Docker, `curl`,
-`jq`, `sqlite3`, and GNU/Linux command-line tools. Media scripts require an
-appropriate ffmpeg build. RAM disk and syslog operations need root-level
-permissions.
+Requirements vary by script. Common dependencies are Bash 4+, Docker, `curl`,
+`jq`, `sqlite3`, and standard GNU/Linux tools. The media scripts need a suitable
+ffmpeg build. RAM disk and syslog work needs root-level permissions.
 
 ## WARNING
 
-Some of these scripts stop containers, change mounts, edit syslog, or work with
-live databases. Read them first and test against copies of your data.
+Some scripts stop containers, change mounts, edit syslog, or touch live
+SQLite databases. Read the script first. Test with copied data. Keep a current,
+verified backup before pointing anything at production.
 
-This works fine for me, but I'm not making any guarantees. I'm not responsible
-for damaged or lost data (especially if you modify the scripts).
+## Documentation
+
+The current platform map, routes, deployment steps, and security notes live in
+[`docs/`](docs/README.md). Historical handoffs are kept under
+[`docs/reference/`](docs/reference/README.md) and aren't current source of truth.
 
 ## License
 
