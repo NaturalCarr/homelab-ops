@@ -2,6 +2,8 @@
 
 Verified: 2026-09-07
 
+Membership/identity documentation reconciled: 2026-09-18. Other sections retain their original check dates.
+
 This is the working technical record for my public sites and the services behind
 them. It covers the live SWAG routes, source files, application services, data
 flow, deployment, access controls, backups, and known problems.
@@ -18,6 +20,7 @@ Live configuration wins when a document disagrees with production. Files under
 - [Natural Carr](NATURALCARR.md) - portfolio routes, resumes, and live metrics.
 - [Dataviz](DATAVIZ.md) - dashboard sources and chart behavior.
 - [Membership gateway](BROSS-MEMBERSHIP.md) - support plans, webhooks, self-service, review, and enforcement controls.
+- [B.Ross identity rollout](BROSS-IDENTITY-ROLLOUT.md) - canonical roadmap and checkpoints; edge isolation/owner review are live, first pilot link verified, signed-in recovery is enabled; latest image/source correspondence remains unverified, OIDC/login presentation remain planned.
 - [Home IT site](BROSS-NATURALCARR.md) - source and deployment for `bross.naturalcarr.com`.
 - [SWAG edge](SWAG-EDGE.md) - nginx, TLS, static roots, forward auth, and reload procedure.
 - [Service subdomains](SERVICE-SUBDOMAINS.md) - purpose and proxy behavior for each service host.
@@ -35,7 +38,7 @@ The documented public surface includes:
 - `naturalcarr.com`, including role and job-specific pages.
 - `bross.naturalcarr.com`.
 - The B.Ross API on port 3100.
-- The membership gateway on port 3110.
+- The membership gateway on private Docker port 3110 (no host-published port).
 - Uptime Kuma and Tautulli data published through the sites.
 - The standalone dataviz project (no active public route).
 

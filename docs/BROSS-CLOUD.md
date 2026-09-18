@@ -1,6 +1,18 @@
 # B.Ross Cloud
 
-Verified: 2026-09-09
+Verified: 2026-09-18 (gateway inspection, source and installed admin files). Other service checks retain their stated dates.
+
+## Current membership and admin state
+
+The gateway is healthy. Owner login-link review and signed-in recovery are enabled. Member lookup remains `legacy_email`; enforcement remains `dry_run`. No gateway host ports are published. SWAG reaches `bross-membership:3110` on the dedicated edge network; PostgreSQL stays on the internal database network.
+
+Use `https://supporter.bross.cloud/` for membership status and `GET/POST /identity-recovery` for account-link help (no portal subdirectory). Use only `https://admin.bross.cloud/` for administration: B.Ross Media and Supporter Management are tabs. Login links and recovery requests stay inside Supporter Management. Internal renderer/API routes remain necessary, but aren't separate operator entry pages. Supporter's admin paths remain denied.
+
+Production migrations 008 (verified login links) and 009 (recovery requests) were applied and registered at operator-confirmed checkpoints. One externally verified pilot login link was confirmed. These are dated checkpoints, not a fresh database count.
+
+The operator reports the browser checks complete. Retain that as operator evidence, not an independent live CSRF/replay/approval test. Prior signed-out forged-header checks returned 302 on protected entry routes, 403 on Supporter admin and 200 on public support. No new real link, payment or Plex operation was performed for this documentation update.
+
+Latest recovery wording/raw-field hardening has 96 focused passing source checks (no skips). A newer running image is now observed, but its exact bundled source hasn't been compared: don't assume those source changes are either still absent or verified deployed. Payment intake still associates unknown provider accounts by normalized email; review that ownership risk before verified-link activation. Native OIDC and app-specific login appearance remain planned. See [the identity rollout](BROSS-IDENTITY-ROLLOUT.md) for evidence and remaining gates.
 
 ## Purpose
 
@@ -67,7 +79,9 @@ OnLoad, the page calls `GET /api/backgrounds`, builds the rotation, and advances
 
 ### Music player
 
-OnLoad, the page calls `GET /api/songs`. Playback waits for the first Click/Keypress because browsers block unattended audio.
+OnLoad, the page calls `GET /api/songs`, which returns filenames and per-track metadata (title, artist, cover-art availability). Playback waits for the first Click/Keypress because browsers block unattended audio.
+
+The player shows the track title and artist from embedded ID3/container tags. When tags are missing, it falls back to the filename without extension. The track list uses the same metadata. Embedded cover art loads from `/api/tracks/:file/art` and displays in the album-art area of the player card. Clicking the art opens an enlarged lightbox view (click or Escape to close).
 
 The player supports:
 
@@ -75,11 +89,25 @@ The player supports:
 - Previous and next.
 - Progress display and scrubbing.
 - Current and remaining time.
-- Track-list expansion.
+- Track-list expansion with title and artist per row.
 - Current-track download.
 - Minimize and restore.
-- Album art and track metadata.
+- Album art from embedded tags, with click-to-enlarge lightbox.
 - A canvas/Web Audio visualizer whose color follows the Media or Cloud selection.
+
+Drag/Release carries momentum from the last 100 ms of movement. The player
+bounces off all four viewport edges and slows to a stop. Grab it again to stop
+the glide. Holding still before release doesn't throw it.
+
+Bounds update during motion, on viewport resize/zoom, and when the player changes
+size (including minimize/restore and playlist expansion). If the player is larger
+than the viewport, that axis stays at the viewport's starting edge. Phone drags
+still use the top bar; controls and playlist scrolling keep their normal behavior.
+Reduced-motion disables the release glide.
+
+Verified on 2026-09-09: JavaScript syntax and simulated drag/bounce/resize checks
+passed. Deployed JavaScript and HTML hashes match both staging and public HTTPS
+responses. Interactive browser verification remains pending.
 
 The page includes local vendor scripts for jQuery, Hammer, QR code generation, ProgressBar, and older layout helpers. WaveSurfer and Three.js load from public CDNs. The CDN URLs are not version-pinned with subresource-integrity hashes.
 
@@ -112,7 +140,16 @@ Send Request doesn't submit the selected values. It displays the current-quarter
 
 ## Admin page
 
+Tabbed administration deployed 2026-09-17: B.Ross Media retains existing controls; Supporter Management embeds the private gateway; internal renderer/API routes aren't standalone entry pages. Both inherit the unchanged owner-only Authentik rule; no Manage hostname is added. Live admin page/default proxy hashes match `/mnt/cache_addons/addonfiles/dockers/appdata/bross-membership/identity-rollout/admin-tabs-20260917`. GUI rebuild, framing header checks, real nginx validation/reload and signed-out route checks passed. Tab/syntax/history simulations passed. The operator reports owner/non-owner and sign-out/history browser checks complete. Supporter admin paths remain HTTP 403. Exact two-file backup: `/mnt/cache_addons/addonfiles/dockers/appdata/swag/nginx/identity-header-backups/admin-tabs-qnghD8G0`.
+
 `https://admin.bross.cloud/` is protected by the Authentik forward-auth includes in SWAG.
+
+Admin cache fix staged on 2026-09-10 (nginx validation, reload, and live sign-out
+checks operator-reported complete): admin responses use private/no-store headers with ETag
+and If-Modified-Since reuse disabled. The page hides before leaving and reloads
+when restored from browser history, so a restored page goes through Authentik
+again. The dedicated admin sign-in redirect also uses no-store and preserves
+the Authentik response cookie.
 
 The admin page manages:
 
@@ -154,7 +191,8 @@ The admin host also exposes Authentik-protected reverse proxies for:
 | Browser function | API route |
 |---|---|
 | Background rotation | `GET /api/backgrounds` |
-| Audio list | `GET /api/songs` |
+| Audio list and metadata | `GET /api/songs` |
+| Cover art | `GET /api/tracks/:file/art` |
 | Page-view beacon | `POST /api/visit?p=<path>` |
 | Admin bootstrap | `GET /api/admin/playlists/video`, `/music`, `/videos`, `/songs`, and `/defaults` |
 | Playlist and file-browser assignment save | `PUT /api/admin/playlists/:type/:name` |

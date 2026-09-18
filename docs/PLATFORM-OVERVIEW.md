@@ -1,6 +1,18 @@
 # Platform Overview
 
-Verified: 2026-09-07
+Verified: 2026-09-18 (gateway inspection, source and installed admin files). Other service checks retain their stated dates.
+
+## Current membership and admin state
+
+The gateway is healthy. Owner login-link review and signed-in recovery are enabled. Member lookup remains `legacy_email`; enforcement remains `dry_run`. No gateway host ports are published. SWAG reaches `bross-membership:3110` on the dedicated edge network; PostgreSQL stays on the internal database network.
+
+Use `https://supporter.bross.cloud/` for membership status and `GET/POST /identity-recovery` for account-link help (no portal subdirectory). Use only `https://admin.bross.cloud/` for administration: B.Ross Media and Supporter Management are tabs. Login links and recovery requests stay inside Supporter Management. Internal renderer/API routes remain necessary, but aren't separate operator entry pages. Supporter's admin paths remain denied.
+
+Production migrations 008 (verified login links) and 009 (recovery requests) were applied and registered at operator-confirmed checkpoints. One externally verified pilot login link was confirmed. These are dated checkpoints, not a fresh database count.
+
+The operator reports the browser checks complete. Retain that as operator evidence, not an independent live CSRF/replay/approval test. Prior signed-out forged-header checks returned 302 on protected entry routes, 403 on Supporter admin and 200 on public support. No new real link, payment or Plex operation was performed for this documentation update.
+
+Latest recovery wording/raw-field hardening has 96 focused passing source checks (no skips). A newer running image is now observed, but its exact bundled source hasn't been compared: don't assume those source changes are either still absent or verified deployed. Payment intake still associates unknown provider accounts by normalized email; review that ownership risk before verified-link activation. Native OIDC and app-specific login appearance remain planned. See [the identity rollout](BROSS-IDENTITY-ROLLOUT.md) for evidence and remaining gates.
 
 ## Purpose
 
@@ -29,10 +41,12 @@ SWAG / nginx on Tower
     |
     +-- Node services
     |     +-- 192.168.1.253:3100 -> B.Ross API
-    |     +-- 192.168.1.253:3110 -> membership gateway
+    |     +-- bross-membership:3110 -> gateway on dedicated Docker edge
+    |           +-- internal database network -> PostgreSQL
     |
     +-- Identity gate
-    |     +-- Authentik outpost -> admin.bross.cloud and new.bross.cloud
+    |     +-- Authentik outpost -> B.Ross/Natural Carr admin hosts
+    |     +-- Authentik outpost -> New / Request / Stats / Supporter
     |
     +-- Product services
           +-- Plex / Plex2 / Jellyfin
@@ -46,7 +60,7 @@ SWAG / nginx on Tower
 |---|---|---|
 | SWAG | nginx, Let's Encrypt integration | TLS termination, static hosting, reverse proxy, Authentik integration |
 | B.Ross site | Static HTML, CSS, JavaScript | Media and cloud service launcher, background media, audio player, donations, VPS quote UI |
-| B.Ross admin | Static HTML, CSS, JavaScript | Playlist, default-media, preview, scrub, and rename controls |
+| B.Ross admin | Static HTML, CSS, JavaScript | Two-tab media administration and embedded supporter management |
 | B.Ross API | Node.js 22, Express 4, `music-metadata` | Media index, admin writes, visitor counts, Tautulli stats, and long-term uptime |
 | Membership gateway | Node.js 22, Express 5, PostgreSQL 16 | Payment-provider intake, supporter portal, identity matching, review, and controlled access enforcement |
 | Natural Carr site | Static HTML, CSS, JavaScript | Portfolio pages, targeted role pages, targeted job pages, and live platform metrics |
@@ -86,15 +100,15 @@ The `stats.json` field named `uptime` is the current 24-hour mean from Kuma. It 
 
 1. Stripe, PayPal, and Patreon send signed events to public webhook routes.
 2. The gateway verifies each provider signature and normalizes the membership state in PostgreSQL.
-3. Supporters use `/manage` for sign-in, status, and link requests.
-4. Administrators use a private dashboard and review queues.
+3. Supporters use `https://supporter.bross.cloud/` for Authentik sign-in, status, and link requests (no `/manage` subdirectory).
+4. The owner uses the tabs at `https://admin.bross.cloud/`; Supporter Management contains gateway review/recovery queues.
 5. Plex remains the media-access authority. The gateway applies strict review and enforcement gates before any write.
 
 ## Deployment boundaries
 
 - Static SWAG files become active after a file copy. A browser hard refresh can be required.
 - B.Ross API source is built into a container. A source change needs a Compose rebuild.
-- Membership source is built from the flash-drive repository. A source change needs a Compose rebuild.
+- Membership source is built from `/mnt/cache_addons/addonfiles/github/bross-supporter-gateway`, not the flash-drive service copy. Rebuild/recreate only through Compose Manager's GUI.
 - An nginx configuration change needs `nginx -t` before reload.
 - Authentik policy and provider changes are separate from these files.
 

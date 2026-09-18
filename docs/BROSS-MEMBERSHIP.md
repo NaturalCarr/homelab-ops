@@ -1,8 +1,22 @@
 # B.Ross Membership Gateway
 
-Verified: 2026-09-07
+Verified: 2026-09-18 (gateway inspection, source and installed admin files). Other service checks retain their stated dates.
+
+## Current membership and admin state
+
+The gateway is healthy. Owner login-link review and signed-in recovery are enabled. Member lookup remains `legacy_email`; enforcement remains `dry_run`. No gateway host ports are published. SWAG reaches `bross-membership:3110` on the dedicated edge network; PostgreSQL stays on the internal database network.
+
+Use `https://supporter.bross.cloud/` for membership status and `GET/POST /identity-recovery` for account-link help (no portal subdirectory). Use only `https://admin.bross.cloud/` for administration: B.Ross Media and Supporter Management are tabs. Login links and recovery requests stay inside Supporter Management. Internal renderer/API routes remain necessary, but aren't separate operator entry pages. Supporter's admin paths remain denied.
+
+Production migrations 008 (verified login links) and 009 (recovery requests) were applied and registered at operator-confirmed checkpoints. One externally verified pilot login link was confirmed. These are dated checkpoints, not a fresh database count.
+
+The operator reports the browser checks complete. Retain that as operator evidence, not an independent live CSRF/replay/approval test. Prior signed-out forged-header checks returned 302 on protected entry routes, 403 on Supporter admin and 200 on public support. No new real link, payment or Plex operation was performed for this documentation update.
+
+Latest recovery wording/raw-field hardening has 96 focused passing source checks (no skips). A newer running image is now observed, but its exact bundled source hasn't been compared: don't assume those source changes are either still absent or verified deployed. Payment intake still associates unknown provider accounts by normalized email; review that ownership risk before verified-link activation. Native OIDC and app-specific login appearance remain planned. See [the identity rollout](BROSS-IDENTITY-ROLLOUT.md) for evidence and remaining gates.
 
 ## Purpose
+
+Existing provider intake still associates accounts by normalized email when no provider identifier is known. That separate ownership risk is unchanged and needs Phase 3 review. The new lookup is not a claim that all email associations have been removed. No card, bank or payment credentials are added to the identity schema.
 
 The membership gateway pulls Stripe, PayPal, and Patreon supporter state into one PostgreSQL model. It runs the public plans, signed webhooks, self-service portal, private review tools, and guarded media-access workflow.
 
@@ -20,13 +34,15 @@ Plex remains the media-access authority. Wizarr supplies invitation and account 
 | Database client | `pg` 8.16 |
 | Email | Nodemailer 9 |
 | QR generation | `qrcode` and `@napi-rs/canvas` |
-| Host port | 3110 |
+| Private application port | 3110; no host port binding |
 
 Source:
 
-- Windows: `O:\homelab-ops\services\bross-membership`
-- UNC: `\\TOWER\flash\homelab-ops\services\bross-membership`
-- Unraid: `/boot/homelab-ops/services/bross-membership`
+- Windows: `R:\github\bross-supporter-gateway`
+- UNC: `\\TOWER\addonfiles\github\bross-supporter-gateway`
+- Unraid: `/mnt/cache_addons/addonfiles/github/bross-supporter-gateway`
+
+The repository service copy isn't the active build context. Recreate/rebuild through Unraid's Compose Manager GUI.
 
 Compose Manager:
 
@@ -65,13 +81,12 @@ Do not read, copy, log, or commit the two secret files. Real credentials never b
 
 | Method | Route | Purpose |
 |---|---|---|
-| GET | `/` | Redirect to `/support` |
 | GET | `/support` | Support plan and provider page |
 | POST | `/checkout/stripe` | Create a hosted Stripe Checkout session |
 | POST | `/webhooks/stripe` | Verify and ingest Stripe events |
 | POST | `/webhooks/paypal` | Verify and ingest PayPal events |
 | POST | `/webhooks/patreon` | Verify and ingest Patreon events |
-| GET | `/health` | Database-aware health |
+| GET | `/health` | Private database-aware health (not a public SWAG route) |
 
 SWAG exposes the support, checkout, and webhook routes under `https://bross.cloud`.
 
@@ -79,49 +94,29 @@ Provider webhooks must remain free of proxy-level interactive authentication. Th
 
 ## Supporter self-service
 
-| Method | Route | Purpose |
+| Method | Route on supporter.bross.cloud | Purpose |
 |---|---|---|
-| GET | `/manage` | Sign-in or authenticated portal |
-| POST | `/manage/request` | Request a magic link |
-| GET | `/manage/verify` | Verification page |
-| POST | `/manage/verify` | Consume a one-time token and create a session |
-| GET | `/manage/plex-auth` | Start Plex PIN/OAuth authentication |
-| GET | `/manage/plex-auth/callback` | Complete Plex authentication |
-| POST | `/manage/manual-review` | Submit an account-match review |
-| POST | `/manage/plex-link` | Submit a Plex link request |
-| POST | `/manage/logout` | Revoke the current session |
+| GET | `/` | Authenticated membership status or account-link help |
+| POST | `/manual-review` | Existing payment/Plex account-match review |
+| POST | `/plex-link` | Existing Plex link request |
+| GET | `/logout` | Existing portal sign-out |
+| GET / POST | `/identity-recovery` | Signed-in Authentik-to-membership recovery request |
 
-The source tests these controls:
+Recovery doesn't need an email from the payment provider. The optional subscription, transaction or membership reference assists manual review; a submitted ID isn't ownership proof. Candidate lookup uses provider + subscription ID. Other references require externally verified manual selection. Keep privacy warnings; requesting review doesn't change support or access.
 
-- Raw magic-link tokens use the URL fragment, not the query string.
-- Stored login and session tokens are purpose-separated HMAC digests.
-- Login tokens are one-time and expire.
-- Session cookies are Secure, HttpOnly, SameSite Lax, and scoped to `/manage`.
-- State-changing portal requests require a session-bound CSRF token.
-- Sign-in and review forms use generic responses, origin checks, a honeypot, and keyed rate limits.
-- Plex OAuth state uses a signed short-lived HttpOnly cookie.
-- The Plex token used for sign-in is not retained.
-- Review requests do not grant access without administrator approval.
+Latest member copy: "Already supporting B.Ross, but your accounts aren't linked?", "All requests are manually reviewed", "Support Method" and "Subscription, transaction or membership ID (if available)". Member pages explain the action/outcome without advertising internal IDs or automatic linking mechanics. Legacy magic-link/Plex session routes remain compatibility features, not the current portal entry point.
 
-## Private API and dashboard
+## Private API and tabbed administration
 
-`GET /api/v1/memberships/:email` uses `X-API-Key`.
+`GET /api/v1/memberships/:email` requires `X-API-Key`.
 
-The application also has a private `/admin/` dashboard with routes for:
+Open only `https://admin.bross.cloud/`. The Compose WebUI points at this root. Its unchanged owner-only Authentik rule protects both tabs. The private gateway `/admin` namespace serves embedded views/APIs through that host; known top-level renderer navigation redirects into the matching root tab.
 
-- Overview and reconciliation.
-- Wizarr observation.
-- Plex access review.
-- Identity-link decisions.
-- Temporary overrides.
-- Enforcement proposals, approval, skip, status, and latest run.
-- Notification status and test delivery.
-- Self-service readiness and review queues.
-- Pending supporter invitations and processing.
+Internal identity APIs: `GET/POST /admin/api/identity-links`, `POST /admin/api/identity-links/:linkId/revoke`, `GET /admin/api/identity-recovery`, `POST /admin/api/identity-recovery/:requestId/decision`. These aren't separate operator pages.
 
-The main SWAG configuration does not expose the membership `/admin` route. On `bross.cloud`, `/admin*` redirects to the separate media-admin site at `admin.bross.cloud`. The Compose Manager WebUI label that points to `https://bross.cloud/admin/` therefore does not reach this dashboard.
+Gateway Basic admin authentication is disabled. Preserve owner-only edge authorization, independently configured owner UID/Host/Origin/token checks for identity decisions, Supporter admin denial and the unpublished backend port. Matching login flows alone don't enforce owner access.
 
-The membership application can apply its own HTTP Basic authentication if the admin route is reached directly. Keep it enabled unless the route is placed behind a verified identity proxy.
+Supporter Management retains reconciliation, observations, Plex review, overrides, enforcement proposals, notifications, self-service queues and invitation processing. Review/approval doesn't merge members or change payments/Plex access.
 
 ## Provider model
 
@@ -148,6 +143,8 @@ The database uses privacy-minimized records for:
 - Enforcement actions and audit history.
 - Self-service tokens, sessions, and review requests.
 - Invitation queue state.
+- Authority-scoped verified Authentik login links (migration 008).
+- Identity-bound recovery requests and decisions (migration 009).
 
 Unverified identity links, mismatched accounts, and unknown states must go to review.
 
@@ -190,10 +187,10 @@ Failures can be retried to the configured limit. The workflow can create a Wizar
 
 ## Tests
 
-The current source has 21 test files and 179 `test()` calls.
+Latest recorded focused source run: 96 passing checks, zero failures/skips. Earlier isolated PostgreSQL/HTTP runs passed concurrency, replay, ownership conflicts, audit rollback, revision and member/owner controls; those preceded the latest raw-field hardening. No fresh full-suite/dependency audit or exact image/source verification is claimed here.
 
 ```sh
-cd /boot/homelab-ops/services/bross-membership
+cd /mnt/cache_addons/addonfiles/github/bross-supporter-gateway
 pnpm test
 ```
 
@@ -203,13 +200,13 @@ The test suite covers configuration, providers, reconciliation, notifications, p
 
 ```sh
 cd /boot/config/plugins/compose.manager/projects/bross-membership
-docker compose up -d --build
+docker compose config --quiet
 docker compose ps
 docker compose logs --tail=100 membership
-curl -sS http://127.0.0.1:3110/health
+docker exec swag curl -fsS --max-time 10 http://bross-membership:3110/health
 ```
 
-The health endpoint returned `{"status":"ok"}` on 2026-09-07.
+Run configuration validation in Tower's terminal; build/recreate through Compose Manager's GUI only. Phase 1B used existing images, not a source rebuild. The current containers report healthy; private health and public support checks passed before recreation, and the operator confirmed support/portal access afterward.
 
 ## Backups
 
@@ -224,14 +221,4 @@ A copied PostgreSQL directory is not a tested restore. Verify the restore path b
 
 ## Current project status
 
-The project snapshot dated 2026-09-05 records:
-
-- Core gateway, observation, dry-run enforcement, notifications, and self-service as deployed.
-- Manual live-write testing and full production activation as incomplete.
-- Wizarr-mediated invitation work as in progress.
-- Stripe-hosted Cash App Pay source as complete but deployment pending.
-
-The source changed again on 2026-09-07. Live health was verified, but each later
-phase was not retested during this documentation pass. Use the current source,
-current database migrations, and a fresh validation run before changing
-enforcement mode.
+Owner review, recovery and the tabbed admin are deployed. Verified-link member lookup, native OIDC and app-specific login appearance remain separately gated. Stripe/Cash App, PayPal and Patreon are present; fresh authorized Checkout/signed-webhook observations remain separate gates. Venmo is deferred. A legitimate manual Plex2 invite/restore and full production enforcement gates remain unresolved. The [identity rollout](BROSS-IDENTITY-ROLLOUT.md) retains the complete roadmap.

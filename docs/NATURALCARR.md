@@ -1,6 +1,6 @@
 # Natural Carr
 
-Verified: 2026-09-07
+Verified: 2026-09-15
 
 ## Purpose
 
@@ -15,6 +15,10 @@ Verified: 2026-09-07
 Every route shares one visual system and one live statistics feed. The copy, skill emphasis, and resume download change for the target role.
 
 ## Deployment
+
+### Protected admin sign-out (2026-09-17)
+
+https://admin.naturalcarr.com/ serves /config/www/natural-admin/index.html, not the public portfolio root. A styled keyboard-focusable Sign Out link is published in its header at /outpost.goauthentik.io/sign_out through the existing Authentik server include. No restart/proxy/policy change needed. Live HTML SHA-25652be682bc40f3ee1bd2534f01f9afb188c12156ab29a955133ac712ea4cd6e8f; exact original backup /mnt/cache_addons/addonfiles/dockers/appdata/swag/admin-ui-backups/natural-admin-index.before-signout-20260918T0255Z.html (original hashde79c982bd74865613b575738ab78fd0bb7967f2cb875f7bc51c0540b4bda72b). Structural/link/hash checks pass; signed-out admin/logout path302 observed. The operator reports browser checks complete; authenticated session clearing was not independently tested. Don't claim global SSO logout from a route probe alone.
 
 | Layer | Path |
 |---|---|
@@ -99,27 +103,36 @@ The root and `/devops/` focus on:
 - Azure, Microsoft 365, Active Directory, Google Workspace, Apple School Manager, Jamf, Windows Autopilot, CrowdStrike Falcon, and Cisco Meraki.
 - Process development, SOPs, automation, and multi-party escalation.
 
-It downloads `/sysadmin/natural-carr-nhl-it-service-desk-manager-resume.json`.
+It downloads `/sysadmin/natural-carr-nhl-it-service-desk-manager-resume.pdf`. The matching JSON remains published as the editable resume source.
 
 ### Systems
 
 `/systems/` preserves the broader IT and systems presentation. It has technology-first skill groups for development, systems and virtualization, networking and security, and automation and operations.
 
-## Job-specific pages
+## Tailored profile pages
 
-Job pages live at `/js/<job-identifier>/`. Each page has role-specific metadata, a tailored opening, tailored skills and experience emphasis, and a matching Reactive Resume JSON.
+Tailored pages live at `/js/<capability-profile>/`. Each page has candidate-focused metadata, a tailored opening, tailored skills and experience emphasis, and a matching Reactive Resume JSON.
 
 | Identifier | Target |
 |---|---|
-| `branch-cloud-ops` | Cloud operations and reliability |
-| `cuny-infra-ops` | Infrastructure operations and observability |
-| `datadog-service-management` | Service management and DevOps advocacy |
-| `kalshi-it-admin` | IT systems, endpoint, and identity |
-| `my-it-crew-senior-support` | Senior IT support and systems |
-| `orveon-infrastructure` | Azure and infrastructure operations |
-| `plaid-techops` | TechOps and endpoint engineering |
+| `cloud-ops` | Cloud operations and reliability |
+| `infra-ops` | Infrastructure operations and observability |
+| `service-ops` | Service management and technical communication |
+| `endpoint-id` | IT systems, endpoint, and identity |
+| `systems-support` | Senior IT support and systems |
+| `azure-infra` | Azure and infrastructure operations |
+| `endpoint-auto` | TechOps and endpoint engineering |
+| `network-infra` | Network and infrastructure engineering |
+| `linux-systems` | Linux systems and operational troubleshooting |
+| `ops-process` | IT operations, asset records, and process automation |
 
 The matching JSON files are listed in [Routes and access](ROUTES-AND-ACCESS.md).
+
+The network-infra and linux-systems versions use Kalshi gray. The ops-process version uses NHL dark. The ops-process page is positioned around verified transferable operations experience and does not claim unverified ServiceNow, CMDB, Discovery, or service-mapping experience.
+
+Public portfolio copy must describe Natural Carr. The eyebrow line and browser title must use verified capabilities, outcomes, or professional positioning. Never put the target employer, exact job title, requisition number, or other application-tracking metadata in those fields.
+
+Public route names and published filenames must also be capability-based. Do not use employer names, exact job titles, requisition numbers, or application IDs anywhere in a public NaturalCarr.com URL. The Website profile label in Reactive Resume must match the destination route. Internal canonical JSON filenames may retain application identifiers when needed for source tracking.
 
 ## Live metrics
 
@@ -187,9 +200,25 @@ Key directories:
 
 Published job JSON files are copies. Update the private source first, copy the approved file to its site directory, then compare hashes.
 
+For approved job-specific resumes, `Q:\resumes\json\job specific` is the canonical library. The `json\generated` directory is a working area; copy an approved generated file into `job specific` before publishing it.
+
+The current 2026 job-specific resume standard uses:
+
+- The Ditgar template.
+- A 33% sidebar.
+- Summary, experience, and projects in the main column.
+- Profiles, skills, and education in the sidebar.
+- US Letter, Inter, visible icons, and a one-page target.
+- Only the Kalshi gray (`#4B5563`) or NHL dark (`#111827`) primary color. Use gray for technical and infrastructure resumes. Use dark for IT management, service desk, and service-management resumes.
+- Profile labels that fit inside the sidebar. When a route is too long, shorten both the public route and its displayed label instead of showing a different label for the same destination. Routes and labels must describe a capability profile, not a target employer or specific job.
+- Inspect the live Reactive Resume profile order before editing it. Locate the Website entry by its profile type or stable ID, not by a fixed array index; preserve the LinkedIn and GitHub entries and verify the exported PDF.
+
+Keep retired employer- or job-specific routes as compatibility redirects to the current capability-based route.
+
+On 2026-09-15 the Branch, Kalshi, Plaid, CUNY, and Datadog job pages and resume sources were refreshed with newly verified scope and operational outcomes. The master CV is the source of truth for those facts.
+
 ## Known deployment gaps
 
-- The root, DevOps, IT manager, and systems pages link to `/Carr, Natural B - Resume -Current.pdf`. That file was not present in the live Natural Carr root on 2026-09-07. Those downloads are broken until a current PDF is published or the links are changed.
 - The root and DevOps pages duplicate content but have no canonical link metadata.
 - The root copy contains “I'm an Systems & Infrastructure Specialist.” It should be “I'm a Systems & Infrastructure Specialist.”
 - Some targeted headings contain a space before terminal punctuation in the rendered source.
@@ -199,3 +228,15 @@ Published job JSON files are copies. Update the private source first, copy the a
 ## Static deployment
 
 Back up and copy only the changed files. HTML, CSS, JavaScript, JSON, and resume updates under this root do not need a container rebuild. Hard-refresh after deployment.
+
+## Resume download contract
+
+Every public portfolio route must have a role-matched PDF resume stored with that page. The primary resume button and the footer resume button must download that PDF, not the editable JSON source.
+
+The JSON remains the canonical editable resume source. After it is approved:
+
+1. Import or update the matching resume in Reactive Resume.
+2. Export and visually verify a one-page PDF.
+3. Store the PDF in the page's own directory with a stable role-specific filename.
+4. Point every visible resume download on that page to the local PDF.
+5. Verify the public URL returns `Content-Type: application/pdf` and begins with the `%PDF` file signature. A `200` response by itself is insufficient because the nginx fallback can return the portfolio HTML for a missing file.

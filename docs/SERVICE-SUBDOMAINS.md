@@ -1,6 +1,18 @@
 # B.Ross Service Subdomains
 
-Verified: 2026-09-07
+Verified: 2026-09-18 (gateway inspection, source and installed admin files). Other service checks retain their stated dates.
+
+## Current membership and admin state
+
+The gateway is healthy. Owner login-link review and signed-in recovery are enabled. Member lookup remains `legacy_email`; enforcement remains `dry_run`. No gateway host ports are published. SWAG reaches `bross-membership:3110` on the dedicated edge network; PostgreSQL stays on the internal database network.
+
+Use `https://supporter.bross.cloud/` for membership status and `GET/POST /identity-recovery` for account-link help (no portal subdirectory). Use only `https://admin.bross.cloud/` for administration: B.Ross Media and Supporter Management are tabs. Login links and recovery requests stay inside Supporter Management. Internal renderer/API routes remain necessary, but aren't separate operator entry pages. Supporter's admin paths remain denied.
+
+Production migrations 008 (verified login links) and 009 (recovery requests) were applied and registered at operator-confirmed checkpoints. One externally verified pilot login link was confirmed. These are dated checkpoints, not a fresh database count.
+
+The operator reports the browser checks complete. Retain that as operator evidence, not an independent live CSRF/replay/approval test. Prior signed-out forged-header checks returned 302 on protected entry routes, 403 on Supporter admin and 200 on public support. No new real link, payment or Plex operation was performed for this documentation update.
+
+Latest recovery wording/raw-field hardening has 96 focused passing source checks (no skips). A newer running image is now observed, but its exact bundled source hasn't been compared: don't assume those source changes are either still absent or verified deployed. Payment intake still associates unknown provider accounts by normalized email; review that ownership risk before verified-link activation. Native OIDC and app-specific login appearance remain planned. See [the identity rollout](BROSS-IDENTITY-ROLLOUT.md) for evidence and remaining gates.
 
 This is the SWAG-side map for each service host. Product backups and administration still belong in their own guides.
 
@@ -50,6 +62,8 @@ Upstream:
 
 The public B.Ross Media menu links directly to this host.
 
+Access update: 2026-09-16. Authentik forward auth now gates the UI using New's existing flows and `require-plex-friends` binding. Native Ombi login and existing API exemptions remain. The LAN upstream repair is applied and operator-confirmed working.
+
 ## Stats
 
 Host:
@@ -67,6 +81,12 @@ Upstream:
 `/stats` is passed to the upstream's `/stats` path. Other paths go to the upstream root. The live root redirected through Tautulli's own auth behavior during the check.
 
 The B.Ross API also queries Tautulli on the LAN with a private API key.
+
+Access update: 2026-09-16. Authentik gates the UI; native individual Plex/guest sessions and per-user history limits remain unchanged. Existing API/newsletter/image exemptions remain. Don't inject shared Basic/admin credentials to simulate SSO.
+
+## Supporter portal
+
+`https://supporter.bross.cloud/` is the current membership portal (no `/manage` subdirectory). SWAG forwards verified Authentik identity to `bross-membership:3110` over a dedicated edge network. Port 3110 is unpublished and PostgreSQL is on an internal database-only network shared with the gateway. Support/checkout/signed webhook routes stay public on `bross.cloud` and clear identity headers. See [the identity rollout](BROSS-IDENTITY-ROLLOUT.md) for verified state, backups, and future identity/login work.
 
 ## MeshCentral
 
@@ -165,7 +185,7 @@ Host:
 
 Purpose:
 
-Media playlist/default management, preview and rename, youtube-dl, and TubeSync.
+One owner-only tabbed root: B.Ross Media (playlists, defaults, preview, rename and downloaders) and Supporter Management (gateway dashboard, login links and recovery requests). Embedded views/APIs are internal, not standalone operator pages.
 
 Access:
 
@@ -173,7 +193,8 @@ Authentik forward auth.
 
 Targets:
 
-- Static admin page from `/config/www/bross/admin.html`.
+- Static tabbed shell from `/config/www/bross/admin.html`.
+- Internal gateway `/admin` namespace -> `bross-membership:3110` on the private edge.
 - `/api/` -> port 3100.
 - `/youtube-dl` -> port 8282.
 - `/youtube-dl-auto` -> port 4848 after prefix rewrite.
@@ -248,6 +269,12 @@ The following names appear only in disabled or commented configuration:
 - `wedding.bross.cloud`.
 - The old ZNC host.
 - `j2024.bross.cloud`.
-- `resume.naturalcarr.com`.
+
 
 Do not call these active until they are enabled and tested.
+
+## Natural Carr admin and resume editor
+
+`admin.naturalcarr.com` serves `/config/www/natural-admin` behind owner-only Authentik. The header Sign Out button uses `/outpost.goauthentik.io/sign_out`.
+
+`resume.naturalcarr.com` has an active SWAG block proxying to `192.168.1.253:3000`. Configuration checked on 2026-09-18; upstream availability/authorization weren't retested.

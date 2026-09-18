@@ -1,8 +1,30 @@
 # Security Controls and Findings
 
-Verified: 2026-09-07
+Verified: 2026-09-18 (gateway inspection, source and installed admin files). Other service checks retain their stated dates.
 
-This is a focused operational review. It is not a penetration test.
+## Current membership and admin state
+
+The gateway is healthy. Owner login-link review and signed-in recovery are enabled. Member lookup remains `legacy_email`; enforcement remains `dry_run`. No gateway host ports are published. SWAG reaches `bross-membership:3110` on the dedicated edge network; PostgreSQL stays on the internal database network.
+
+Use `https://supporter.bross.cloud/` for membership status and `GET/POST /identity-recovery` for account-link help (no portal subdirectory). Use only `https://admin.bross.cloud/` for administration: B.Ross Media and Supporter Management are tabs. Login links and recovery requests stay inside Supporter Management. Internal renderer/API routes remain necessary, but aren't separate operator entry pages. Supporter's admin paths remain denied.
+
+Production migrations 008 (verified login links) and 009 (recovery requests) were applied and registered at operator-confirmed checkpoints. One externally verified pilot login link was confirmed. These are dated checkpoints, not a fresh database count.
+
+The operator reports the browser checks complete. Retain that as operator evidence, not an independent live CSRF/replay/approval test. Prior signed-out forged-header checks returned 302 on protected entry routes, 403 on Supporter admin and 200 on public support. No new real link, payment or Plex operation was performed for this documentation update.
+
+Latest recovery wording/raw-field hardening has 96 focused passing source checks (no skips). A newer running image is now observed, but its exact bundled source hasn't been compared: don't assume those source changes are either still absent or verified deployed. Payment intake still associates unknown provider accounts by normalized email; review that ownership risk before verified-link activation. Native OIDC and app-specific login appearance remain planned. See [the identity rollout](BROSS-IDENTITY-ROLLOUT.md) for evidence and remaining gates.
+
+## Gateway identity controls and open findings
+
+This is a focused review, not a penetration test. Identity comes only from verified SWAG/Authentik subrequests; public support/checkout/webhooks clear identity. Keep gateway host ports closed and dedicated edge/internal database networks. Docker/host administrators remain trusted. Direct IPv6-client and exhaustive media checks aren't claimed complete.
+
+Owner identity decisions require configured authority/UID/admin Host, exact mutation Origin, JSON and expiring HMAC proof. Recovery binds submissions to the trusted signed-in UID, ignores client identity selection, stores a single-use token hash and serializes limits (five per hour, three pending per UID). Form proof expires after 15 minutes; requests after 24 hours. Owner decisions require external ownership proof, explicit consent and current revision. Mapping/request/audits are atomic; audit failure rolls back. Conflicting/revoked identities aren't silently reassigned.
+
+Latest source validation checks provider enum, raw reference type/160-character limit and control bytes before the ASCII ID allowlist. SQL stays parameterized; escaped HTML/plain-text owner queue rendering prevents interpreting submitted values as markup. The recorded 96 source checks include injection/XSS cases; they aren't a complete security audit or proof of exact image contents.
+
+Open: provider intake's `resolveUser()` still selects an existing member by normalized email when provider IDs don't resolve. Email equality isn't ownership proof. Revoking a verified link also doesn't block legacy email login. Resolve intake/migration/recovery activation gates before claiming email is no longer an ownership key.
+
+Operator browser checks were reported complete. Preserve owner-only edge rules, Supporter admin denial and port closure. Natural Carr admin has the same-origin Sign Out button; browser confirmation doesn't establish global logout across every application.
 
 ## Verified controls
 
@@ -22,7 +44,7 @@ The shared `ssl.conf` has optional CSP, Permissions-Policy, Referrer-Policy, X-C
 
 ### Authentik
 
-`admin.bross.cloud` and `new.bross.cloud` use forward authentication through Authentik. The outpost route is intentionally open so sign-in can start and finish. The authorization subrequest location is internal.
+The Authentik embedded outpost loads the B.Ross/Natural Carr admin hosts plus New, Request, Stats, and Supporter. Request/Stats now reuse New's login flows and `require-plex-friends` policy binding. Existing admin restrictions weren't changed or re-audited during membership hardening. The outpost route is intentionally open so sign-in can start and finish. The authorization subrequest location is internal.
 
 The forward-auth include passes verified username, group, entitlement, email, name, and UID headers to the upstream.
 
@@ -103,10 +125,10 @@ Routing was left unchanged. Before the next API rebuild:
 
 ## Direct LAN service ports
 
-Ports 3100 and 3110 are bound on Tower. A LAN client can bypass SWAG and Authentik by using the host and port directly.
+Port 3100 remains the separate B.Ross API exposure finding (not changed by this rollout). Membership port 3110 is unpublished; the operator's LAN admin request is denied and container inspection shows no IPv4/IPv6 host bindings.
 
 - Port 3100 has no application authentication for the media admin router.
-- Port 3110 applies its own application controls.
+- The gateway remains reachable to SWAG and its internal database-network peer. Maintain those trust boundaries; Docker/host administrators remain trusted.
 
 Restrict port 3100 to trusted clients or the reverse proxy, or add an application credential before treating the LAN as untrusted.
 
